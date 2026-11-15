@@ -1,7 +1,7 @@
-// Harness driver for the markdown-render-speed entry: loads every case
-// from /input/cases.json, renders each with parse() from parse.js, and
-// writes the HTML array to /output/html.json. Runs as `node /bot/main.ts`
-// on Node 22.
+// Driver the harness executes: read every case from the input directory,
+// render each markdown string with parse() from parse.js, and write the
+// resulting HTML array to the output directory as html.json.
+// Invoked as `node /bot/main.ts` under Node 22 (type-stripping only).
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from './parse.js';
@@ -9,8 +9,10 @@ import { parse } from './parse.js';
 const inputDir = process.env.MAKEFUN_INPUT_DIR ?? '/input';
 const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 
-const rawCases = readFileSync(join(inputDir, 'cases.json'), 'utf8');
-const cases = JSON.parse(rawCases);
-const rendered = cases.map((c) => parse(c.markdown));
+const raw = readFileSync(join(inputDir, 'cases.json'), 'utf8');
+const cases = JSON.parse(raw);
+const html = cases.map((entry) => parse(entry.markdown));
+
+// Create the output directory first: the harness may hand us a fresh path.
 mkdirSync(outputDir, { recursive: true });
-writeFileSync(join(outputDir, 'html.json'), JSON.stringify(rendered));
+writeFileSync(join(outputDir, 'html.json'), JSON.stringify(html));
