@@ -2,17 +2,17 @@
 // marked 18.1.3 renders with its default options (GFM on, breaks off,
 // pedantic off, async off). Dependency-free ES module.
 //
-// Design: a fresh implementation of the same grammar, built for speed.
-// - One module-level state object, reset per parse() call; no classes, no
-//   per-parse allocation of lexer/parser/renderer objects.
-// - Block and inline scanning run on an index into the source string with
-//   sticky regexes (no repeated substring slicing of the remainder).
-// - Block dispatch: the first characters of a line narrow the candidate
-//   block rules to the few that can match, in the reference order.
+// How it works, in brief:
+// - One module-level state object, reset on every parse() call; no lexer /
+//   parser / renderer objects are allocated per parse.
+// - Block and inline scanning work on indexes into the source with sticky
+//   regexes, never repeatedly slicing the remainder of the string.
+// - Block dispatch narrows the candidate rules by the line's first
+//   characters, trying only the rules that can match, in reference order.
 // - Inline rendering writes HTML straight out of the scanner instead of
-//   building an intermediate token tree; plain-text runs are consumed by
-//   one regex call, and structural tokens are dispatched on the first char.
-// - The emphasis/strikethrough mask is built lazily, only when a run
+//   building a token tree; plain-text runs are consumed in one scan, and
+//   structural tokens are dispatched on their first character.
+// - The emphasis / strikethrough mask is built lazily, only when a run
 //   actually contains a possible opener.
 
 'use strict';
@@ -22,7 +22,7 @@
 // ---------------------------------------------------------------------------
 
 // Build a regex from a string or regex, with replace()/getRegex() chaining
-// (the same device the reference grammar uses to compose its rules).
+// (the same composition device the reference grammar uses for its rules).
 function edit(pattern, flags) {
   let source = typeof pattern === 'string' ? pattern : pattern.source;
   const obj = {
