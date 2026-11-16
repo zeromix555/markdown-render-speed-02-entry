@@ -20,22 +20,24 @@ MAKEFUN_INPUT_DIR=<cases dir> MAKEFUN_OUTPUT_DIR=<out dir> node main.ts
 
 ## How it works
 
-Everything lives in one ES module, built around a `Parser` class that is
-created fresh for every `parse()` call:
+Everything lives in one ES module. A fresh plain context object is built
+for every `parse()` call and threaded through module-level functions:
 
-- grammar rules are assembled by a small factory loop from
-  `[name, factory]` pairs, so a rule composed from earlier rules names
-  them through the partially built set;
-- the block lexer dispatches through a `Map` from first character to a
-  list of tokenizer methods, tried in the reference order, and merges
+- grammar rules are assigned one by one into the `BLK` / `INL` tables,
+  so a rule composed from earlier rules names them through the table;
+- the block lexer dispatches through a route table of first characters
+  to tokenizer functions, tried in the reference order, and merges
   paragraph, text, indented-code and definition tokens the way the
   reference does;
-- the inline driver dispatches on the current character, renders straight
-  to HTML with no token tree, and consumes plain-text runs with a single
-  character-code loop that tracks the cheap stop and the email stop
-  together;
-- emphasis and strikethrough collect their right delimiters into an
-  array and walk it, sharing one masked-source closer scan per run;
+- tokens are positional arrays (`['heading', raw, depth, text]`), not
+  objects, and rendering is an if/else chain that pushes HTML strings
+  into an output array;
+- the inline driver looks its handler up by character, renders straight
+  to HTML with no token tree, and consumes plain-text runs with two
+  while-loop passes — a cheap stop and an email-local stop — taking the
+  smaller of the two;
+- emphasis and strikethrough walk their right-delimiter regex directly
+  with an exec loop, sharing one masked-source closer scan per run;
   link references live in a `Map` and are gathered in a single pass.
 
 Tables, fenced code, blockquotes, lists (task lists included) and setext
